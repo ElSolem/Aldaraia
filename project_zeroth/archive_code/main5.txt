@@ -1,0 +1,86 @@
+package zeroth
+
+import "core:fmt"
+import "base:builtin"
+import "core:time"
+
+HEAD_SEAT_COUNT :: 2
+TAIL_SEAT_COUNT :: 2
+SEAT_COUNT_PER_SIDE :: 9
+SEAT_COUNT_PER_TABLE :: SEAT_COUNT_PER_SIDE * 2
+TABLE_COUNT :: 2
+TOTAL_SEAT_COUNT :: SEAT_COUNT_PER_TABLE * TABLE_COUNT
+
+TokenType :: enum { Weak, Strong, Surprise, Unknown } // +, -, !, ?
+Polarity  :: enum { Negative, Positive } // -, +
+Parity    :: enum { Even, Odd } // 0, 1: Positive and Negative tables
+State     :: enum { Active, Inactive } // 0, 1: Active and Inactive seats
+SeatPosition :: enum {
+    Head, Tail,
+    L1, L2, L3, L4, L5, L6, L7, L8, L9,
+    R1, R2, R3, R4, R5, R6, R7, R8, R9
+}
+
+Position :: struct {
+    table: Parity,      // which table 
+    seat: SeatPosition    // specific seat on the table
+}
+Token :: struct {
+    timestamp: time.Time,
+    type: TokenType,      // Weak, Strong, Surprise, Unknown
+    polarity: Polarity,   // Negative, Positive    
+    position: Position,   // table and seat
+    lifecycle: int        // 1 (birth) to 20 (death/transformation)
+}
+
+Seat :: struct {
+    timestamp: time.Time,
+    position: Position,
+    polarity: Polarity,
+    state: State
+}
+
+seats := make(map[SeatPosition]Seat)
+
+// Manually define the order of SeatPosition enum values
+seat_positions := [20]SeatPosition{
+    SeatPosition.Head, SeatPosition.Tail,
+    SeatPosition.L1, SeatPosition.L2, SeatPosition.L3, SeatPosition.L4, SeatPosition.L5, SeatPosition.L6, SeatPosition.L7, SeatPosition.L8, SeatPosition.L9,
+    SeatPosition.R1, SeatPosition.R2, SeatPosition.R3, SeatPosition.R4, SeatPosition.R5, SeatPosition.R6, SeatPosition.R7, SeatPosition.R8, SeatPosition.R9
+}
+
+// #TODO - Implement a function to generate the seat_positions array automatically
+init_seats :: proc() {
+    for i in seat_positions {
+        switch i {
+        case SeatPosition.Head, SeatPosition.Tail:
+            seats[i] = Seat{
+                timestamp = time.now(),
+                position = Position{ table = Parity.Even, seat = i },
+                polarity = Polarity.Negative,
+                state = State.Inactive,
+            }
+        case SeatPosition.L1, SeatPosition.L2, SeatPosition.L3, SeatPosition.L4, SeatPosition.L5, SeatPosition.L6, SeatPosition.L7, SeatPosition.L8, SeatPosition.L9:
+            seats[i] = Seat{
+                timestamp = time.now(),
+                position = Position{ table = Parity.Even, seat = i },
+                polarity = Polarity.Negative,
+                state = State.Inactive,
+            }
+        case SeatPosition.R1, SeatPosition.R2, SeatPosition.R3, SeatPosition.R4, SeatPosition.R5, SeatPosition.R6, SeatPosition.R7, SeatPosition.R8, SeatPosition.R9:
+            seats[i] = Seat{
+                timestamp = time.now(),
+                position = Position{ table = Parity.Odd, seat = i },
+                polarity = Polarity.Positive,
+                state = State.Inactive,
+            }
+        }
+    }
+}
+
+main :: proc(){
+    init_seats()
+    for pos, seat in seats {
+        fmt.println("Seat:", pos,", Polarity:", seat.polarity)
+    }
+}

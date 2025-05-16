@@ -1,0 +1,147 @@
+package zeroth
+
+import "core:fmt"
+import "base:builtin"
+import "core:time"
+
+SEAT_COUNT_PER_SIDE :: 9
+SEAT_COUNT_PER_TABLE :: SEAT_COUNT_PER_SIDE * 2
+TABLE_COUNT :: 2
+TOTAL_SEAT_COUNT :: SEAT_COUNT_PER_TABLE * TABLE_COUNT
+HEAD_THRONE_COUNT :: 2 // Head seats on each table
+TAIL_THRONE_COUNT :: 2 // Tail seats on each table
+
+SeatPos :: enum { // 20 seats on a table
+    Head,
+    Tail,
+    L1,
+    L2,
+    L3,
+    L4,
+    L5,
+    L6,
+    L7,
+    L8,
+    L9,
+    R1,
+    R2,
+    R3,
+    R4,
+    R5,
+    R6,
+    R7,
+    R8,
+    R9,
+}
+
+Seat :: struct {
+    pos: SeatPos,
+    process: proc(t: ^Token) -> ^Token, // The seat's processor
+}
+
+WeakLeft := [SEAT_COUNT_PER_SIDE]Seat{
+    {SeatPos.L1, weak_processor},
+    {SeatPos.L2, weak_processor},
+    {SeatPos.L3, weak_processor},
+    {SeatPos.L4, weak_processor},
+    {SeatPos.L5, weak_processor},
+    {SeatPos.L6, weak_processor},
+    {SeatPos.L7, weak_processor},
+    {SeatPos.L8, weak_processor},
+    {SeatPos.L9, weak_processor},
+}
+WeakRight := [SEAT_COUNT_PER_SIDE]Seat{
+    {SeatPos.R1, weak_processor},
+    {SeatPos.R2, weak_processor},
+    {SeatPos.R3, weak_processor},
+    {SeatPos.R4, weak_processor},
+    {SeatPos.R5, weak_processor},
+    {SeatPos.R6, weak_processor},
+    {SeatPos.R7, weak_processor},
+    {SeatPos.R8, weak_processor},
+    {SeatPos.R9, weak_processor},
+}
+StrongLeft := [SEAT_COUNT_PER_SIDE]Seat{
+    {SeatPos.L1, strong_processor},
+    {SeatPos.L2, strong_processor},
+    {SeatPos.L3, strong_processor},
+    {SeatPos.L4, strong_processor},
+    {SeatPos.L5, strong_processor},
+    {SeatPos.L6, strong_processor},
+    {SeatPos.L7, strong_processor},
+    {SeatPos.L8, strong_processor},
+    {SeatPos.L9, strong_processor},
+}
+StrongRight := [SEAT_COUNT_PER_SIDE]Seat{
+    {SeatPos.R1, strong_processor},
+    {SeatPos.R2, strong_processor},
+    {SeatPos.R3, strong_processor},
+    {SeatPos.R4, strong_processor},
+    {SeatPos.R5, strong_processor},
+    {SeatPos.R6, strong_processor},
+    {SeatPos.R7, strong_processor},
+    {SeatPos.R8, strong_processor},
+    {SeatPos.R9, strong_processor},
+}
+
+/* The head processor takes a token passed from the L1, or R1 seats
+    then uses its basic passes. For weak and strong tokens it will just
+    compare, change its polarity and then pass to the other side. **Will need
+    parallelism support. */
+
+    head_processor :: proc(l_seats, r_seats: []Seat, t: ^Token) -> ^Token {
+        // Check if the token is a weak or strong token
+        switch t.type {
+            case TokenType.Weak:
+                switch t.polarity {
+                    case Polarity.Negative:
+                        fmt.println("Weak Negative Biomeme")
+                    case Polarity.Positive:
+                        fmt.println("Weak Positive Biomeme")
+                }
+                fmt.println("Weak Biomeme")
+            case TokenType.Strong:
+                switch t.polarity {
+                    case Polarity.Negative:
+                        fmt.println("Strong Negative Biomeme")
+                    case Polarity.Positive:
+                        fmt.println("Strong Positive Biomeme")
+                }
+                fmt.println("Strong Biomeme")
+            case TokenType.Surprise:
+                switch t.polarity {
+                    case Polarity.Negative:
+                        fmt.println("Surprise Negative Biomeme")
+                    case Polarity.Positive:
+                        fmt.println("Surprise Positive Biomeme")
+                }
+                fmt.println("Surprise Biomeme")
+            case TokenType.Unknown:
+                switch t.polarity {
+                    case Polarity.Negative:
+                        fmt.println("Unknown Negative Biomeme")
+                    case Polarity.Positive:
+                        fmt.println("Unknown Positive Biomeme")
+                }
+                fmt.println("Unknown Biomeme")
+        }
+            
+        // Create weak and strong tokens
+        weak_token := create_token(0, TokenType.Weak, Polarity.Negative, Vector2{1.0, 2.0}, Vector3{1.0, 2.0, 3.0})
+        strong_token := create_token(1, TokenType.Strong, Polarity.Positive, Vector2{1.0, 2.0}, Vector3{1.0, 2.0, 3.0})
+        // Pass the weak token to the left side
+        left_start := &l_seats[0] // L1 seat
+        left_start.process(&weak_token)
+        // Pass the strong token to the right side
+        right_start := &r_seats[0] // R1 seat
+        right_start.process(&strong_token)
+        return t
+    }
+    
+    weak_processor :: proc(t: ^Token) -> ^Token {
+        return t
+    }
+    
+    strong_processor :: proc(t: ^Token) -> ^Token {
+        return t
+    }

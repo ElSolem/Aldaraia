@@ -1,0 +1,24 @@
+package zeroth
+
+import "core:fmt"
+import "base:builtin"
+import "core:time"
+
+fabricate_tokens :: proc() {
+    for i in 0..<1_000_000 {
+        token := create_token(i, TokenType.Weak, Polarity.Negative, Vector2{0, 0}, Vector3{0, 0, 0})
+        append(&Tokens, token)
+    }
+}
+
+pass_tokens :: proc() {
+    for token in Tokens {
+    }
+}
+
+weak_processor :: proc(t: ^Token) -> ^Token {
+    return t
+}
+strong_processor :: proc(t: ^Token) -> ^Token {
+    return t
+}

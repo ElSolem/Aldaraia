@@ -1,0 +1,49 @@
+package zeroth
+
+import "core:fmt"
+
+
+TokenType :: enum { 
+    Weak, // (-) Weak Negative
+    Strong, // (+) Strong Positive
+    Surprise, // (!) Surprise
+    Unknown // (?) Unknown
+}
+
+Polarity :: enum {Negative, Positive}
+
+Vector2 :: struct {
+	x: f32,
+	y: f32,
+}
+
+Vector3 :: struct {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
+Token :: struct { // A digital token that represents virtual/mental particles
+    id: int,
+    type: TokenType,
+    polarity: Polarity,
+    vec2d: Vector2,
+    vec3d: Vector3
+}
+create_token :: proc(id: int, t_type: TokenType, pol: Polarity, low_poly: Vector2, high_poly: Vector3)-> Token {
+    result := Token {
+        id,
+        t_type,
+        pol,
+        low_poly,
+        high_poly
+    }
+    return result
+}
+
+main :: proc() {
+    token1 := create_token(0, TokenType.Weak, Polarity.Negative, Vector2{1.0, 2.0}, Vector3{1.0, 2.0, 3.0})
+    //fmt.println("Token1: ", token1)
+    //head_processor(&token1)
+    fmt.println("Token1: ", head_processor(WeakLeft[:], WeakRight[:], &token1))
+}

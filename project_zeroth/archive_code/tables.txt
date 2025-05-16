@@ -1,0 +1,81 @@
+package abraxas
+
+import "core:fmt"
+import "base:builtin"
+
+SeatPos :: enum { // 20 seats on a table
+    Head,
+    Tail,
+    L1,
+    L2,
+    L3,
+    L4,
+    L5,
+    L6,
+    L7,
+    L8,
+    L9,
+    R1,
+    R2,
+    R3,
+    R4,
+    R5,
+    R6,
+    R7,
+    R8,
+    R9,
+}
+
+Miraisadora :: struct { // Token time fabricator
+    interval: time.Duration, // The time interval for the head fabricator to create tokens
+    count: int, // The number of tokens to create
+}
+
+head_fabricator :: proc() -> (Biomeme, Biomeme) {
+    // Create a token for the L1 and R1 seats
+
+    return weak_token, strong_token
+}
+
+
+
+/* The head processor takes a token passed from the L1, or R1 seats
+    then uses its basic passes. For weak and strong tokens it will just
+    compare, change its polarity and then pass to the other side. **Will need
+    parallelism support. */
+head_processor :: proc(token: ^Biomeme) {
+    switch token.type {
+        case BiomemeType.Weak:
+            switch token.polarity {
+                case Polarity.Negative:
+                    fmt.println("Weak Negative Biomeme")
+                case Polarity.Positive:
+                    fmt.println("Weak Positive Biomeme")
+            }
+            fmt.println("Weak Biomeme")
+        case BiomemeType.Strong:
+            switch token.polarity {
+                case Polarity.Negative:
+                    fmt.println("Strong Negative Biomeme")
+                case Polarity.Positive:
+                    fmt.println("Strong Positive Biomeme")
+            }
+            fmt.println("Strong Biomeme")
+        case BiomemeType.Surprise:
+            switch token.polarity {
+                case Polarity.Negative:
+                    fmt.println("Surprise Negative Biomeme")
+                case Polarity.Positive:
+                    fmt.println("Surprise Positive Biomeme")
+            }
+            fmt.println("Surprise Biomeme")
+        case BiomemeType.Unknown:
+            switch token.polarity {
+                case Polarity.Negative:
+                    fmt.println("Unknown Negative Biomeme")
+                case Polarity.Positive:
+                    fmt.println("Unknown Positive Biomeme")
+            }
+            fmt.println("Unknown Biomeme")
+    }
+}

@@ -1,0 +1,140 @@
+package zeroth
+
+import "core:fmt"
+import "base:builtin"
+import "core:time"
+
+TokenType :: enum { 
+    Weak, // (-) Weak Negative
+    Strong, // (+) Strong Positive
+    Surprise, // (!) Surprise
+    Unknown // (?) Unknown
+}
+
+Polarity :: enum {Negative, Positive}
+
+Vector2 :: struct {
+	x: f32,
+	y: f32,
+}
+
+Vector3 :: struct {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
+Token :: struct { // A digital token that represents virtual/mental particles
+    id: int,
+    type: TokenType,
+    polarity: Polarity,
+    vec2d: Vector2,
+    vec3d: Vector3
+}
+create_token :: proc(id: int, t_type: TokenType, pol: Polarity, low_poly: Vector2, high_poly: Vector3)-> Token {
+    result := Token {
+        id,
+        t_type,
+        pol,
+        low_poly,
+        high_poly
+    }
+    return result
+}
+
+Tokens : [dynamic]Token
+
+// Table and seat related constants
+SEAT_COUNT_PER_SIDE :: 9
+SEAT_COUNT_PER_TABLE :: SEAT_COUNT_PER_SIDE * 2
+TABLE_COUNT :: 2
+TOTAL_SEAT_COUNT :: SEAT_COUNT_PER_TABLE * TABLE_COUNT
+HEAD_THRONE_COUNT :: 2 // Head seats on each table
+TAIL_THRONE_COUNT :: 2 // Tail seats on each table
+
+SeatPos :: enum { // 20 seats on a table
+    Head,
+    Tail,
+    L1,
+    L2,
+    L3,
+    L4,
+    L5,
+    L6,
+    L7,
+    L8,
+    L9,
+    R1,
+    R2,
+    R3,
+    R4,
+    R5,
+    R6,
+    R7,
+    R8,
+    R9,
+}
+
+
+Seat :: struct {
+    pos: SeatPos,
+    process: proc(t: ^Token) -> ^Token, // The seat's processor
+}
+
+WeakLeft := [SEAT_COUNT_PER_SIDE]Seat {
+    {SeatPos.L1, weak_processor},
+    {SeatPos.L2, weak_processor},
+    {SeatPos.L3, weak_processor},
+    {SeatPos.L4, weak_processor},
+    {SeatPos.L5, weak_processor},
+    {SeatPos.L6, weak_processor},
+    {SeatPos.L7, weak_processor},
+    {SeatPos.L8, weak_processor},
+    {SeatPos.L9, weak_processor},
+}
+WeakRight := [SEAT_COUNT_PER_SIDE]Seat {
+    {SeatPos.R1, weak_processor},
+    {SeatPos.R2, weak_processor},
+    {SeatPos.R3, weak_processor},
+    {SeatPos.R4, weak_processor},
+    {SeatPos.R5, weak_processor},
+    {SeatPos.R6, weak_processor},
+    {SeatPos.R7, weak_processor},
+    {SeatPos.R8, weak_processor},
+    {SeatPos.R9, weak_processor},
+}
+StrongLeft := [SEAT_COUNT_PER_SIDE]Seat {
+    {SeatPos.L1, strong_processor},
+    {SeatPos.L2, strong_processor},
+    {SeatPos.L3, strong_processor},
+    {SeatPos.L4, strong_processor},
+    {SeatPos.L5, strong_processor},
+    {SeatPos.L6, strong_processor},
+    {SeatPos.L7, strong_processor},
+    {SeatPos.L8, strong_processor},
+    {SeatPos.L9, strong_processor},
+}
+StrongRight := [SEAT_COUNT_PER_SIDE]Seat {
+    {SeatPos.R1, strong_processor},
+    {SeatPos.R2, strong_processor},
+    {SeatPos.R3, strong_processor},
+    {SeatPos.R4, strong_processor},
+    {SeatPos.R5, strong_processor},
+    {SeatPos.R6, strong_processor},
+    {SeatPos.R7, strong_processor},
+    {SeatPos.R8, strong_processor},
+    {SeatPos.R9, strong_processor},
+}
+
+Fabricator :: struct {
+    interval: time.Duration,
+    count: int
+}
+
+main :: proc() {
+    new_timer := Fabricator{time.Second, 10}
+    fabricate_tokens()
+    fmt.println("Tokens: ", len(Tokens))
+    fmt.println("Token 1: ", Tokens[0].id, Tokens[0].type, Tokens[0].polarity, Tokens[0].vec2d.x, Tokens[0].vec2d.y, Tokens[0].vec3d.x, Tokens[0].vec3d.y, Tokens[0].vec3d.z)
+    fmt.println("Token 2: ", Tokens[1].id, Tokens[1].type, Tokens[1].polarity, Tokens[1].vec2d.x, Tokens[1].vec2d.y, Tokens[1].vec3d.x, Tokens[1].vec3d.y, Tokens[1].vec3d.z)
+}

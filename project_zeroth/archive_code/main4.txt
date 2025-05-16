@@ -1,0 +1,260 @@
+package zeroth
+
+import "core:fmt"
+import "base:builtin"
+import "core:time"
+
+HEAD_SEAT_COUNT :: 2
+TAIL_SEAT_COUNT :: 2
+SEAT_COUNT_PER_SIDE :: 9
+SEAT_COUNT_PER_TABLE :: SEAT_COUNT_PER_SIDE * 2
+TABLE_COUNT :: 2
+TOTAL_SEAT_COUNT :: SEAT_COUNT_PER_TABLE * TABLE_COUNT
+
+Token :: struct {
+    type: TokenType,
+    polarity: Polarity,
+    state: State,
+    position: Position,
+    lifecycle: int // 1(birth)-20(death) tracked as it is processed by each seat: pos turns to surprise at death and neg turns to unknown at death
+}
+
+TokenType :: enum { 
+    Weak, // (-) Weak Negative
+    Strong, // (+) Strong Positive
+    Surprise, // (!) Surprise // Double Positive
+    Unknown // (?) Unknown // Double Negative
+}
+
+Polarity :: enum {Negative, Positive}
+
+State :: enum {Active,Inactive}
+
+Position :: struct {
+    table: Polarity, // Table position
+    seat: SeatPosition // Seat position
+}
+
+SeatPosition :: enum { // 20 seats on a table
+    Head, Tail,
+    L1, L2, L3, L4, L5, L6, L7, L8, L9,
+    R1, R2, R3, R4, R5, R6, R7, R8, R9
+}
+
+Seat :: struct {
+    pos: SeatPosition,
+    prev_seat: ^Seat, // Previous seat between it and head
+    next_seat: ^Seat, // Next seat between it and tail
+    para_seat: ^Seat, // Seat on the other side of the table
+    mirror_seat: ^Seat, // Seat on opposite table
+    stored_token: ^Token 
+}
+
+Head :: struct {
+    seat: Seat,
+}
+
+Tail :: struct {
+    seat: Seat,
+}
+
+Table :: struct {
+    leftSide: [SEAT_COUNT_PER_SIDE]Seat,
+    rightSide: [SEAT_COUNT_PER_SIDE]Seat,
+    head: Head,
+    tail: Tail,
+}
+
+head_generator :: proc() -> [4]Token {
+    weak_token := Token{
+        type = TokenType.Weak,
+        polarity = Polarity.Negative,
+        state = State.Active,
+        position = Position{table = Polarity.Positive, seat = SeatPosition.Head},
+        lifecycle = 1
+    }
+
+    strong_token := Token{
+        type = TokenType.Strong,
+        polarity = Polarity.Positive,
+        state = State.Active,
+        position = Position{table = Polarity.Positive, seat = SeatPosition.Head},
+        lifecycle = 1
+    }
+
+    surprise_token := Token{
+        type = TokenType.Surprise,
+        polarity = Polarity.Positive,
+        state = State.Active,
+        position = Position{table = Polarity.Positive, seat = SeatPosition.Head},
+        lifecycle = 1
+    }
+
+    unknown_token := Token{
+        type = TokenType.Unknown,
+        polarity = Polarity.Negative,
+        state = State.Active,
+        position = Position{table = Polarity.Positive, seat = SeatPosition.Head},
+        lifecycle = 1
+    }
+
+    return [4]Token{weak_token, strong_token, surprise_token, unknown_token}
+}
+
+weak_token_negative_proc :: proc(token: ^Token) -> ^Token {
+    token.lifecycle += 1
+    if token.lifecycle == 20 {
+        token.type = TokenType.Surprise
+        token.lifecycle = 1
+    }
+    token.polarity = Polarity.Positive
+    return token
+}
+
+weak_token_positive_proc :: proc(token: ^Token) -> ^Token {
+    token.lifecycle += 1
+    if token.lifecycle == 20 {
+        token.type = TokenType.Surprise
+        token.lifecycle = 1
+    }
+    token.polarity = Polarity.Negative
+    return token
+}
+
+strong_token_positive_proc :: proc(token: ^Token) -> ^Token {
+    token.lifecycle += 1
+    if token.lifecycle == 20 {
+        token.type = TokenType.Surprise
+        token.lifecycle = 1
+    }
+    token.polarity = Polarity.Negative
+    return token
+}
+
+strong_token_negative_proc :: proc(token: ^Token) -> ^Token {
+    token.lifecycle += 1
+    if token.lifecycle == 20 {
+        token.type = TokenType.Surprise
+        token.lifecycle = 1
+    }
+    token.polarity = Polarity.Positive
+    return token
+}
+
+surprise_token_positive_proc :: proc(token: ^Token) -> ^Token {
+    token.lifecycle += 1
+    if token.lifecycle == 20 {
+        token.type = TokenType.Surprise
+        token.lifecycle = 1
+    }
+    token.polarity = Polarity.Negative
+    return token
+}
+
+surprise_token_negative_proc :: proc(token: ^Token) -> ^Token {
+    token.lifecycle += 1
+    if token.lifecycle == 20 {
+        token.type = TokenType.Surprise
+        token.lifecycle = 1
+    }
+    token.polarity = Polarity.Positive
+    return token
+}
+
+unknown_token_proc :: proc(token: ^Token) -> ^Token {
+    token.lifecycle += 1
+    token.type = TokenType.Weak
+    token.polarity = Polarity.Negative
+    return token
+}
+
+// Directly call the correct procedure based on token type
+process_token :: proc(token: ^Token) -> ^Token {
+    switch token.type {
+        case TokenType.Weak: 
+            if token.polarity == Polarity.Positive {
+                return weak_token_positive_proc(token)
+            } else {
+                return weak_token_negative_proc(token)
+            }
+        case TokenType.Strong:
+            if token.polarity == Polarity.Positive {
+                return strong_token_positive_proc(token)
+            } else {
+                return strong_token_negative_proc(token)
+            }
+        case TokenType.Surprise:
+            if token.polarity == Polarity.Positive {
+                return surprise_token_positive_proc(token)
+            } else {
+                return surprise_token_negative_proc(token)
+            }
+        case TokenType.Unknown:
+            return unknown_token_proc(token)
+    }
+    return token
+}
+
+move_token :: proc(token: ^Token, seat: ^Seat) -> ^Seat {
+    process_token(token)
+    if seat.stored_token != nil {
+        return move_token(seat.stored_token, seat.next_seat)
+    } else {
+        seat.stored_token = token
+        return seat
+    }
+}
+
+process_table :: proc(table: ^Table) {
+    for i in 0..=SEAT_COUNT_PER_TABLE {
+        if i == 0 {
+            move_token(table.head.seat.stored_token, &table.head.seat)
+        } else {
+            move_token(table.leftSide[i].stored_token, &table.leftSide[i])
+            move_token(table.rightSide[i].stored_token, &table.rightSide[i])
+        }
+    }
+}
+
+main :: proc() {
+    fmt.printfln("Hello, World!")
+    head_tokens := head_generator()
+    weak_table := Table{
+        leftSide = [SEAT_COUNT_PER_SIDE]Seat{
+            Seat{pos = SeatPosition.L1},
+            Seat{pos = SeatPosition.L2},
+            Seat{pos = SeatPosition.L3},
+            Seat{pos = SeatPosition.L4},
+            Seat{pos = SeatPosition.L5},
+            Seat{pos = SeatPosition.L6},
+            Seat{pos = SeatPosition.L7},
+            Seat{pos = SeatPosition.L8},
+            Seat{pos = SeatPosition.L9}
+        },
+        rightSide = [SEAT_COUNT_PER_SIDE]Seat{
+            Seat{pos = SeatPosition.R1},
+            Seat{pos = SeatPosition.R2},
+            Seat{pos = SeatPosition.R3},
+            Seat{pos = SeatPosition.R4},
+            Seat{pos = SeatPosition.R5},
+            Seat{pos = SeatPosition.R6},
+            Seat{pos = SeatPosition.R7},
+            Seat{pos = SeatPosition.R8},
+            Seat{pos = SeatPosition.R9}
+        },
+        head = Head{seat = Seat{pos = SeatPosition.Head}},
+        tail = Tail{seat = Seat{pos = SeatPosition.Tail}}
+    }
+
+    process_table(&weak_table)
+    fmt.printfln("Table processed")
+    fmt.printfln("Weak Table")
+    for i in 0..=SEAT_COUNT_PER_TABLE {
+        if i == 0 {
+            fmt.printfln("Head: %s", weak_table.head.seat.stored_token.type)
+        } else {
+            fmt.printfln("Left Side: %s", weak_table.leftSide[i].stored_token.type)
+            fmt.printfln("Right Side: %s", weak_table.rightSide[i].stored_token.type)
+        }
+    }
+}
